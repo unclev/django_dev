@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+
+  web:
+    build:
+      context: .
+      args:
+        - PROJECTNAME
+        - WUID
+        - WGID
+    stop_signal: SIGINT 
+    ports:
+      - "8000:8000"
+    volumes:
+      - '.:/home/webdev'
+

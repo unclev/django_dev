@@ -5,6 +5,18 @@ Django site dev instance
 1. Docker (docker-engine or docker-ce) 1.10.0+.
 2. docker-compose 1.6.0+.
 
+### Proxy network
+This branch modification is specifically for accessing the web site via a reverse proxy -
+for eg. kind of [docker-haproxy-network](https://github.com/gesellix/docker-haproxy-network) or [docker-haproxy-letsencrypt](https://github.com/bringnow/docker-haproxy-letsencrypt). To acomplish this the web container must share the same *haproxy_default* network with a proxy container.
+
+This extenal network can be defined on the Docker host similar to
+```sh
+docker network create -d bridge \
+ --subnet=172.15.0.0/16 \
+ --gateway=172.15.0.1 \
+ haproxy_default
+```
+
 ## Workflow
 1. Clone this repository.
 2. In the directory you cloned it put `.env` file containing desired project name, for eg.:
@@ -40,7 +52,9 @@ Django site dev instance
 
 ## Publishing changes
 When the the contaier is build it copies source code from the build context directory. 
-**This it is not recommended having several django projects at the same source location at the ame time.*
+
+**This it is not recommended having several django projects at the same source location at the ame time.**
+
 So to publish your work into the image:
 1. Stop, remove the running container, and remove the existing image.
 2. Modify *docker-compose.yml* to remove `.:/home/webdev` mapping.
@@ -61,4 +75,31 @@ victor@unclev:/srv/django_dev$ docker-compose exec web bash
 webdev@861fbf29033c:~$ grep SECRET_KEY example/example/settings.py
 SECRET_KEY = 'm5=+7mgsr!!#ape0c_3#2yawmpd(2e5_i4k@oun-6zwykjhzf+'
 webdev@861fbf29033c:~$
+```
+
+## Connecting via the proxy
+For HAProxy does not [fail to start if backend server name don't resolve](http://discourse.haproxy.org/t/haproxy-fails-to-start-if-backend-server-names-dont-resolve/322/16) include `default-server init-addr libc,none` in the `defaults` section.
+
+Note that
+- docker-compose.yml does not publish web server port;
+- haproxy container (see [docker-compose.yml](https://github.com/unclev/haproxy-docker/blob/6c689d07ad34254c530df17f93cbc5ef033709e7/docker-compose.yml#L32-L33)) publishes port 80.
+  The sample [haproxy.cfg](https://github.com/unclev/haproxy-docker/blob/6c689d07ad34254c530df17f93cbc5ef033709e7/config/haproxy/haproxy.cfg).
+
+After starting **djangodev_web_1** and the proxy container (**letsencrypt_haproxy_1** here)
+```
+victor@unclev:/srv/django_dev$ docker-compose ps
+     Name          Command     State   Ports 
+--------------------------------------------
+djangodev_web_1   ./start.sh   Up            
+victor@unclev:/srv/django_dev$ cd ../letsencrypt
+victor@unclev:/srv/letsencrypt$ docker-compose ps
+        Name                       Command               State               Ports            
+---------------------------------------------------------------------------------------------
+letsencrypt_cli_1       entrypoint.sh help               Exit 0                               
+letsencrypt_cron_1      entrypoint.sh cron-auto-re ...   Up       443/tcp                     
+letsencrypt_haproxy_1   /entrypoint.sh                   Up       443/tcp, 0.0.0.0:80->80/tcp 
+```
+opening the site is trivial:
+```
+http://example.tld
 ```

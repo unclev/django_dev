@@ -1,5 +1,11 @@
 version: '2'
 
+# web refer to the http proxy exteranl network
+networks:
+  web:
+    external:
+      name: haproxy_default
+
 services:
 
   web:
@@ -10,8 +16,12 @@ services:
         - WUID
         - WGID
     stop_signal: SIGINT 
-    ports:
-      - "8000:8000"
     volumes:
       - '.:/home/webdev'
+    networks:
+      default:
+      web:
+        # for resolving this site hostname to the container ip use
+#       aliases:
+#          - 'example.tld'
 

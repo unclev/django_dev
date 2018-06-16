@@ -18,6 +18,8 @@ services:
     stop_signal: SIGINT 
     volumes:
       - '.:/home/webdev'
+    ports:
+      - '8000:8000'
     networks:
       default:
       web:

@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:3.4
 ARG PROJECTNAME
 ARG WUID
 ARG WGID
@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN groupadd -g $WGID $WUSER && useradd -m -g $WGID -u $WUID -s /bin/bash $WUSER
 WORKDIR "/home/$WUSER"
 COPY requirements.txt start.sh ./
-RUN pip install -r requirements.txt
+RUN pip install --upgrade -r requirements.txt
 COPY . ./
 RUN chown -Rv $WUSER:$WUSER .
 USER $WUSER
